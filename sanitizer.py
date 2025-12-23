@@ -15,10 +15,13 @@ from typing import Tuple, List
 class ThreeMFSanitizer:
     """Handles sanitization of 3MF files by fixing problematic parameter values"""
 
-    # Parameters to fix and their replacement values
+    # Parameters to fix, their problematic values, and their replacements
     FIXES = {
-        'raft_first_layer_expansion': 0,
-        'tree_support_wall_count': 0
+        'raft_first_layer_expansion': (-1, 0),
+        'tree_support_wall_count': (-1, 0),
+        'solid_infill_filament': (0, 1),
+        'sparse_infill_filament': (0, 1),
+        'wall_filament': (0, 1)
     }
 
     def __init__(self, create_backup=True):
@@ -31,7 +34,7 @@ class ThreeMFSanitizer:
         self.create_backup = create_backup
         self.fixes_applied = []
 
-    def sanitize_file(self, file_path: str) -> Tuple[bool, str, List[str]]:
+    def sanitize_file(self, file: str) -> Tuple[bool, str, List[str]]:
         """
         Sanitize a 3MF file by fixing negative parameter values
 
@@ -42,7 +45,7 @@ class ThreeMFSanitizer:
             Tuple of (success, message, list of fixes applied)
         """
         self.fixes_applied = []
-        file_path = Path(file_path)
+        file_path = Path(file)
 
         # Validate input
         if not file_path.exists():
@@ -58,7 +61,7 @@ class ThreeMFSanitizer:
                 shutil.copy2(file_path, backup_path)
             except Exception as e:
                 return False, f"Failed to create backup: {e}", []
-
+        
         # Create temporary directory for extraction
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
@@ -137,32 +140,36 @@ class ThreeMFSanitizer:
             original_content = content
 
             # Fix each problematic parameter
-            for param, fix_value in self.FIXES.items():
-                # Pattern 1: INI-style (param = -1)
-                pattern1 = rf'{param}\s*=\s*-1\b'
-                replacement1 = f'{param} = {fix_value}'
+            for param, (old_value, new_value) in self.FIXES.items():
+                # Using str() for values to handle different types
+                old_value_str = str(old_value)
+                new_value_str = str(new_value)
+                
+                # Pattern 1: INI-style (param = old_value)
+                pattern1 = rf'{param}\s*=\s*{re.escape(old_value_str)}\b'
+                replacement1 = f'{param} = {new_value_str}'
                 new_content = re.sub(pattern1, replacement1, content)
 
                 if new_content != content:
-                    self.fixes_applied.append(f"{file_path.name}: {param} = -1 -> {fix_value}")
+                    self.fixes_applied.append(f"{file_path.name}: {param} = {old_value_str} -> {new_value_str}")
                     content = new_content
 
-                # Pattern 2: JSON-style ("param": -1)
-                pattern2 = rf'"{param}"\s*:\s*-1\b'
-                replacement2 = f'"{param}": {fix_value}'
+                # Pattern 2: JSON-style ("param": old_value)
+                pattern2 = rf'"{param}"\s*:\s*{re.escape(old_value_str)}\b'
+                replacement2 = f'"{param}": {new_value_str}'
                 new_content = re.sub(pattern2, replacement2, content)
 
                 if new_content != content:
-                    self.fixes_applied.append(f"{file_path.name}: \"{param}\": -1 -> {fix_value}")
+                    self.fixes_applied.append(f"{file_path.name}: \"{param}\": {old_value_str} -> {new_value_str}")
                     content = new_content
 
-                # Pattern 3: JSON-style with quoted string ("param": "-1")
-                pattern3 = rf'"{param}"\s*:\s*"-1"'
-                replacement3 = f'"{param}": "{fix_value}"'
+                # Pattern 3: JSON-style with quoted string ("param": "old_value")
+                pattern3 = rf'"{param}"\s*:\s*"{re.escape(old_value_str)}"'
+                replacement3 = f'"{param}": "{new_value_str}"'
                 new_content = re.sub(pattern3, replacement3, content)
 
                 if new_content != content:
-                    self.fixes_applied.append(f"{file_path.name}: \"{param}\": \"-1\" -> \"{fix_value}\"")
+                    self.fixes_applied.append(f"{file_path.name}: \"{param}\": \"{old_value_str}\" -> \"{new_value_str}\"")
                     content = new_content
 
             # Write back if modified
