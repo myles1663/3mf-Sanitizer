@@ -23,8 +23,9 @@ restart Nautilus afterward to unload the extension.
 
 ## Windows 10 and 11
 
-Build the executable as described below, copy it to Windows and run it once to
-install the per-user context menu. Right-click a 3MF file and choose
+Download [Sanitizador3MF.exe](windows/prebuilt/Sanitizador3MF.exe), or build it
+as described below. Copy it to Windows and run it once to install the per-user
+context menu. Right-click a 3MF file and choose
 **Sanitizar 3MF**. On Windows 11, use **Show more options** first unless the
 classic context menu is already enabled. Each file is processed separately.
 Uninstall via Windows Settings > Apps > Sanitizador 3MF, or run the installer
@@ -35,8 +36,9 @@ To build the Windows x64 executable on Linux, install Go 1.27.3 or later, then
 run `context-menu/windows/build.sh` from the repository root. The build downloads
 `go-winres` v0.3.3 and Go module dependencies if they are not cached. Python
 with Pillow is only required to regenerate the included icon. The output is
-`context-menu/dist/Sanitizador3MF.exe`; no precompiled binary is included in
-this repository.
+`context-menu/dist/Sanitizador3MF.exe`. The included precompiled executable
+was tested on Windows by the contributor; a rebuild from the recovered source
+is not byte-identical and has not been tested on Windows.
 
 ## Tests
 
