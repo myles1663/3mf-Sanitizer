@@ -26,6 +26,10 @@ This prevents you from opening the files in your slicer. 😤
 
 This app **automatically fixes** those files! Just point it at your downloads folder, and it monitors for new 3MF files and fixes them in real-time.
 
+For an alternative on-demand workflow, see the [context-menu tool](context-menu/README.md)
+for Windows and Ubuntu ([guía en español](context-menu/README.es.md)). It creates a
+separate sanitized copy instead of monitoring a folder.
+
 ### What It Does
 
 - ✅ Monitors a folder for new/modified 3MF files
